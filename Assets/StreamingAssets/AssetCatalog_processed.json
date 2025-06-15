@@ -1,0 +1,46 @@
+[
+    {
+        "asset_name_id": "Cube_Prefab",
+        "type": "Prefab",
+        "path": "Assets/prefab/Cube.prefab",
+        "tags": ["cube", "box", "block", "primitive", "wood", "wooden"],
+        "description": "A simple cube primitive, potentially for use as a box or block.",
+        "is_generic_asset": true,
+        "default_collider_type": "box",
+        "estimated_mass_kg": 10
+      },
+      {
+        "asset_name_id": "SubtleGrainedWood_Material",
+        "type": "Material",
+        "path": "Assets/Materials/subtle-grained-wood_albedo.mat",
+        "tags": ["wood", "wooden", "brown", "grain", "light wood", "subtle"],
+        "description": "A material for subtle, light-grained wood."
+      },
+      {
+        "asset_name_id": "Wooden_Plane_Prefab",
+        "type": "Prefab",
+        "path": "Assets/prefab/Wooden_Plane.prefab",
+        "tags": ["plane", "floor", "ground", "surface", "flat", "texture", "wood"],
+        "description": "A simple plane primitive, potentially for use as a floor or ground, made of wood.",
+        "is_generic_asset": true,
+        "default_collider_type": "mesh",
+        "estimated_mass_kg": 10
+      },
+      {
+        "asset_name_id": "Grass_Plane_Prefab",
+        "type": "Prefab",
+        "path": "Assets/prefab/Grass_Plane.prefab",
+        "tags": ["plane", "floor", "ground", "surface", "flat", "texture", "grass"],
+        "description": "A simple plane primitive, potentially for use as a floor or ground, made of grass.",
+        "is_generic_asset": true,
+        "default_collider_type": "mesh",
+        "estimated_mass_kg": 10
+      },
+      {
+        "asset_name_id": "Grass_Material",
+        "type": "Material",
+        "path": "Assets/Materials/Grass.mat",
+        "tags": ["grass", "green", "nature", "texture", "outdoor", "plant"],
+        "description": "A material for subtle, light-grained wood."
+      }
+]
