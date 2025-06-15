@@ -1,5 +1,7 @@
 # Pano2Game: 360° Video to Interactive 3D Scene Converter
 
+##### ref: Collaborate with Gemini 2.5 pro
+
 A Unity-based pipeline that converts 360° panoramic videos into interactive 3D scenes using Gaussian Splatting and AI-driven scene understanding. This project extends the [UnityGaussianSplatting](https://github.com/aras-p/UnityGaussianSplatting) repository with AI-powered scene analysis and reconstruction capabilities.
 
 ---
