@@ -1,0 +1,11 @@
+name: EV-ai-pipeline
+channels:
+  - defaults
+dependencies:
+  - python=3.10
+  - pip
+  - numpy
+  - scikit-learn
+  - pip:
+    - google-generativeai
+    - Pillow 

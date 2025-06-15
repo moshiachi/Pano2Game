@@ -1,0 +1,877 @@
+using UnityEngine;
+using UnityEditor;
+using System.Collections.Generic;
+using System.IO;
+using Object = UnityEngine.Object;
+
+// Define [System.Serializable] helper classes for JSON deserialization
+
+[System.Serializable]
+public struct Vector3Data
+{
+    public float x;
+    public float y;
+    public float z;
+
+    // Implicit conversion to UnityEngine.Vector3 for convenience
+    public static implicit operator Vector3(Vector3Data v)
+    {
+        return new Vector3(v.x, v.y, v.z);
+    }
+}
+
+[System.Serializable]
+public class ColliderInfoData
+{
+    public string type; // "box", "sphere", "capsule", "mesh", "none"
+    public bool is_trigger;
+    public Vector3Data center;
+    public Vector3Data size;   // Relevant for BoxCollider
+    public float radius;      // Relevant for SphereCollider, CapsuleCollider
+    public float height;      // Relevant for CapsuleCollider
+    public int direction;     // Relevant for CapsuleCollider (0=X, 1=Y, 2=Z)
+}
+
+[System.Serializable]
+public class RigidbodyInfoData
+{
+    public float mass;
+    public bool use_gravity;
+    public bool is_kinematic;
+    public float drag;
+    public float angular_drag;
+}
+
+[System.Serializable]
+public class SceneObjectData
+{
+    public string asset_path;             // Path to prefab or "primitive::[type]"
+    public string object_name_in_hierarchy; // Name for the GameObject in the hierarchy
+    public Vector3Data position;
+    public Vector3Data rotation_euler;    // Euler angles for rotation
+    public Vector3Data scale;
+    public string material_path_override; // Path to a Material asset
+    public bool is_generic_asset;         // True if it's a generic asset (e.g., primitive) that might need material override
+    public ColliderInfoData collider_info;
+    public RigidbodyInfoData rigidbody_info;
+}
+
+// Wrapper class for deserializing a JSON array at the root
+[System.Serializable]
+public class SceneDataWrapper
+{
+    public SceneObjectData[] items;
+}
+
+public static class LLMGeneratedSceneBuilder
+{
+    [MenuItem("AI Tools/Construct Scene from LLM-Generated Code")]
+    public static void ConstructScene()
+    {
+        // 5a. Find or create a root GameObject
+        GameObject sceneRoot = GameObject.Find("LLM_Generated_Scene_Root");
+        if (sceneRoot == null)
+        {
+            sceneRoot = new GameObject("LLM_Generated_Scene_Root");
+            Debug.Log("Created new LLM_Generated_Scene_Root GameObject.");
+        }
+        else
+        {
+            Debug.Log("Found existing LLM_Generated_Scene_Root GameObject. Adding objects under it.");
+        }
+
+        // 5b. Define a multiline string variable jsonInput
+        string jsonInput = @"[
+    {
+        ""asset_path"": ""Assets/prefab/Grass_Plane.prefab"",
+        ""object_name_in_hierarchy"": ""grassy_ground_0"",
+        ""position"": {
+            ""x"": 0.0,
+            ""y"": 0.0,
+            ""z"": 0.0
+        },
+        ""rotation_euler"": {
+            ""x"": 0,
+            ""y"": 0.0,
+            ""z"": 0
+        },
+        ""scale"": {
+            ""x"": 1.0,
+            ""y"": 1.0,
+            ""z"": 1.0
+        },
+        ""material_path_override"": ""Assets/Objects/ADG_Textures/ground_vol1/ground8/ground8.mat"",
+        ""is_generic_asset"": true,
+        ""collider_info"": {
+            ""type"": ""mesh"",
+            ""is_trigger"": false,
+            ""center"": {
+                ""x"": 0,
+                ""y"": 0,
+                ""z"": 0
+            },
+            ""size"": {
+                ""x"": 1,
+                ""y"": 1,
+                ""z"": 1
+            },
+            ""radius"": 0.5,
+            ""height"": 2.0,
+            ""direction"": 1
+        },
+        ""rigidbody_info"": {
+            ""mass"": 0.0,
+            ""use_gravity"": true,
+            ""is_kinematic"": true,
+            ""drag"": 0.1,
+            ""angular_drag"": 0.05
+        }
+    },
+    {
+        ""asset_path"": ""Assets/Objects/Tree9/Tree9_2.prefab"",
+        ""object_name_in_hierarchy"": ""tree_1"",
+        ""position"": {
+            ""x"": 4.0,
+            ""y"": 0.0,
+            ""z"": 25.0
+        },
+        ""rotation_euler"": {
+            ""x"": 0,
+            ""y"": 0.0,
+            ""z"": 0
+        },
+        ""scale"": {
+            ""x"": 1.0,
+            ""y"": 1.0,
+            ""z"": 1.0
+        },
+        ""material_path_override"": null,
+        ""is_generic_asset"": false,
+        ""collider_info"": {
+            ""type"": ""capsule"",
+            ""is_trigger"": false,
+            ""center"": {
+                ""x"": 0,
+                ""y"": 0,
+                ""z"": 0
+            },
+            ""size"": {
+                ""x"": 1,
+                ""y"": 1,
+                ""z"": 1
+            },
+            ""radius"": 0.5,
+            ""height"": 2.0,
+            ""direction"": 1
+        },
+        ""rigidbody_info"": {
+            ""mass"": 0.0,
+            ""use_gravity"": true,
+            ""is_kinematic"": true,
+            ""drag"": 0.1,
+            ""angular_drag"": 0.05
+        }
+    },
+    {
+        ""asset_path"": ""Assets/Objects/Tree9/Tree9_2.prefab"",
+        ""object_name_in_hierarchy"": ""tree_2"",
+        ""position"": {
+            ""x"": 4.0,
+            ""y"": 0.0,
+            ""z"": 25.0
+        },
+        ""rotation_euler"": {
+            ""x"": 0,
+            ""y"": 0.0,
+            ""z"": 0
+        },
+        ""scale"": {
+            ""x"": 1.0,
+            ""y"": 1.0,
+            ""z"": 1.0
+        },
+        ""material_path_override"": null,
+        ""is_generic_asset"": false,
+        ""collider_info"": {
+            ""type"": ""capsule"",
+            ""is_trigger"": false,
+            ""center"": {
+                ""x"": 0,
+                ""y"": 0,
+                ""z"": 0
+            },
+            ""size"": {
+                ""x"": 1,
+                ""y"": 1,
+                ""z"": 1
+            },
+            ""radius"": 0.5,
+            ""height"": 2.0,
+            ""direction"": 1
+        },
+        ""rigidbody_info"": {
+            ""mass"": 0.0,
+            ""use_gravity"": true,
+            ""is_kinematic"": true,
+            ""drag"": 0.1,
+            ""angular_drag"": 0.05
+        }
+    },
+    {
+        ""asset_path"": ""Assets/Objects/Tree9/Tree9_2.prefab"",
+        ""object_name_in_hierarchy"": ""tree_3"",
+        ""position"": {
+            ""x"": 4.0,
+            ""y"": 0.0,
+            ""z"": 25.0
+        },
+        ""rotation_euler"": {
+            ""x"": 0,
+            ""y"": 0.0,
+            ""z"": 0
+        },
+        ""scale"": {
+            ""x"": 1.0,
+            ""y"": 1.0,
+            ""z"": 1.0
+        },
+        ""material_path_override"": null,
+        ""is_generic_asset"": false,
+        ""collider_info"": {
+            ""type"": ""capsule"",
+            ""is_trigger"": false,
+            ""center"": {
+                ""x"": 0,
+                ""y"": 0,
+                ""z"": 0
+            },
+            ""size"": {
+                ""x"": 1,
+                ""y"": 1,
+                ""z"": 1
+            },
+            ""radius"": 0.5,
+            ""height"": 2.0,
+            ""direction"": 1
+        },
+        ""rigidbody_info"": {
+            ""mass"": 0.0,
+            ""use_gravity"": true,
+            ""is_kinematic"": true,
+            ""drag"": 0.1,
+            ""angular_drag"": 0.05
+        }
+    },
+    {
+        ""asset_path"": ""Assets/Objects/Tolik_Cola/Recreation park/Bench/2/HighPoli/Bench_H_2.prefab"",
+        ""object_name_in_hierarchy"": ""garden_bench_4"",
+        ""position"": {
+            ""x"": 5.0,
+            ""y"": 0.0,
+            ""z"": 2.0
+        },
+        ""rotation_euler"": {
+            ""x"": 0,
+            ""y"": 0.0,
+            ""z"": 0
+        },
+        ""scale"": {
+            ""x"": 1.0,
+            ""y"": 1.0,
+            ""z"": 1.0
+        },
+        ""material_path_override"": null,
+        ""is_generic_asset"": false,
+        ""collider_info"": {
+            ""type"": ""box"",
+            ""is_trigger"": false,
+            ""center"": {
+                ""x"": 0,
+                ""y"": 0,
+                ""z"": 0
+            },
+            ""size"": {
+                ""x"": 1,
+                ""y"": 1,
+                ""z"": 1
+            },
+            ""radius"": 0.5,
+            ""height"": 2.0,
+            ""direction"": 1
+        },
+        ""rigidbody_info"": {
+            ""mass"": 0.0,
+            ""use_gravity"": true,
+            ""is_kinematic"": true,
+            ""drag"": 0.1,
+            ""angular_drag"": 0.05
+        }
+    },
+    {
+        ""asset_path"": ""Assets/prefab/Grass_Plane.prefab"",
+        ""object_name_in_hierarchy"": ""dirt_path_5"",
+        ""position"": {
+            ""x"": 10.0,
+            ""y"": 0.0,
+            ""z"": 0.0
+        },
+        ""rotation_euler"": {
+            ""x"": 0,
+            ""y"": 0.0,
+            ""z"": 0
+        },
+        ""scale"": {
+            ""x"": 1.0,
+            ""y"": 1.0,
+            ""z"": 1.0
+        },
+        ""material_path_override"": ""Assets/Objects/ADG_Textures/ground_vol1/ground8/ground8.mat"",
+        ""is_generic_asset"": true,
+        ""collider_info"": {
+            ""type"": ""mesh"",
+            ""is_trigger"": false,
+            ""center"": {
+                ""x"": 0,
+                ""y"": 0,
+                ""z"": 0
+            },
+            ""size"": {
+                ""x"": 1,
+                ""y"": 1,
+                ""z"": 1
+            },
+            ""radius"": 0.5,
+            ""height"": 2.0,
+            ""direction"": 1
+        },
+        ""rigidbody_info"": {
+            ""mass"": 0.0,
+            ""use_gravity"": true,
+            ""is_kinematic"": true,
+            ""drag"": 0.1,
+            ""angular_drag"": 0.05
+        }
+    },
+    {
+        ""asset_path"": ""primitive::box"",
+        ""object_name_in_hierarchy"": ""dense_shrubbery_6"",
+        ""position"": {
+            ""x"": 6.0,
+            ""y"": 0.0,
+            ""z"": 5.0
+        },
+        ""rotation_euler"": {
+            ""x"": 0,
+            ""y"": 0.0,
+            ""z"": 0
+        },
+        ""scale"": {
+            ""x"": 1.0,
+            ""y"": 1.0,
+            ""z"": 1.0
+        },
+        ""material_path_override"": ""Assets/Materials/subtle-grained-wood_albedo.mat"",
+        ""is_generic_asset"": true,
+        ""collider_info"": {
+            ""type"": ""mesh"",
+            ""is_trigger"": false,
+            ""center"": {
+                ""x"": 0,
+                ""y"": 0,
+                ""z"": 0
+            },
+            ""size"": {
+                ""x"": 1,
+                ""y"": 1,
+                ""z"": 1
+            },
+            ""radius"": 0.5,
+            ""height"": 2.0,
+            ""direction"": 1
+        },
+        ""rigidbody_info"": {
+            ""mass"": 500.0,
+            ""use_gravity"": true,
+            ""is_kinematic"": true,
+            ""drag"": 0.1,
+            ""angular_drag"": 0.05
+        }
+    },
+    {
+        ""asset_path"": ""Assets/Objects/Tree9/Tree9_2.prefab"",
+        ""object_name_in_hierarchy"": ""mixed_foliage_7"",
+        ""position"": {
+            ""x"": 14.0,
+            ""y"": 0.0,
+            ""z"": 15.0
+        },
+        ""rotation_euler"": {
+            ""x"": 0,
+            ""y"": 0.0,
+            ""z"": 0
+        },
+        ""scale"": {
+            ""x"": 1.0,
+            ""y"": 1.0,
+            ""z"": 1.0
+        },
+        ""material_path_override"": null,
+        ""is_generic_asset"": false,
+        ""collider_info"": {
+            ""type"": ""mesh"",
+            ""is_trigger"": false,
+            ""center"": {
+                ""x"": 0,
+                ""y"": 0,
+                ""z"": 0
+            },
+            ""size"": {
+                ""x"": 1,
+                ""y"": 1,
+                ""z"": 1
+            },
+            ""radius"": 0.5,
+            ""height"": 2.0,
+            ""direction"": 1
+        },
+        ""rigidbody_info"": {
+            ""mass"": 400.0,
+            ""use_gravity"": true,
+            ""is_kinematic"": true,
+            ""drag"": 0.1,
+            ""angular_drag"": 0.05
+        }
+    },
+    {
+        ""asset_path"": ""primitive::box"",
+        ""object_name_in_hierarchy"": ""ground_cover_plants_8"",
+        ""position"": {
+            ""x"": 11.0,
+            ""y"": 0.0,
+            ""z"": 2.0
+        },
+        ""rotation_euler"": {
+            ""x"": 0,
+            ""y"": 0.0,
+            ""z"": 0
+        },
+        ""scale"": {
+            ""x"": 1.0,
+            ""y"": 1.0,
+            ""z"": 1.0
+        },
+        ""material_path_override"": ""Assets/Materials/Grass.mat"",
+        ""is_generic_asset"": true,
+        ""collider_info"": {
+            ""type"": ""none"",
+            ""is_trigger"": false,
+            ""center"": {
+                ""x"": 0,
+                ""y"": 0,
+                ""z"": 0
+            },
+            ""size"": {
+                ""x"": 1,
+                ""y"": 1,
+                ""z"": 1
+            },
+            ""radius"": 0.5,
+            ""height"": 2.0,
+            ""direction"": 1
+        },
+        ""rigidbody_info"": {
+            ""mass"": 0.1,
+            ""use_gravity"": true,
+            ""is_kinematic"": true,
+            ""drag"": 0.1,
+            ""angular_drag"": 0.05
+        }
+    },
+    {
+        ""asset_path"": ""Assets/Objects/Tree9/Tree9_2.prefab"",
+        ""object_name_in_hierarchy"": ""overhead_canopy_9"",
+        ""position"": {
+            ""x"": 10.0,
+            ""y"": 15.0,
+            ""z"": 10.0
+        },
+        ""rotation_euler"": {
+            ""x"": 0,
+            ""y"": 0.0,
+            ""z"": 0
+        },
+        ""scale"": {
+            ""x"": 1.0,
+            ""y"": 1.0,
+            ""z"": 1.0
+        },
+        ""material_path_override"": null,
+        ""is_generic_asset"": false,
+        ""collider_info"": {
+            ""type"": ""none"",
+            ""is_trigger"": false,
+            ""center"": {
+                ""x"": 0,
+                ""y"": 0,
+                ""z"": 0
+            },
+            ""size"": {
+                ""x"": 1,
+                ""y"": 1,
+                ""z"": 1
+            },
+            ""radius"": 0.5,
+            ""height"": 2.0,
+            ""direction"": 1
+        },
+        ""rigidbody_info"": {
+            ""mass"": 1000.0,
+            ""use_gravity"": true,
+            ""is_kinematic"": true,
+            ""drag"": 0.1,
+            ""angular_drag"": 0.05
+        }
+    },
+    {
+        ""asset_path"": ""Assets/Objects/Tree9/Tree9_2.prefab"",
+        ""object_name_in_hierarchy"": ""distant_trees/foliage_10"",
+        ""position"": {
+            ""x"": 25.0,
+            ""y"": 0.0,
+            ""z"": 45.0
+        },
+        ""rotation_euler"": {
+            ""x"": 0,
+            ""y"": 0.0,
+            ""z"": 0
+        },
+        ""scale"": {
+            ""x"": 1.0,
+            ""y"": 1.0,
+            ""z"": 1.0
+        },
+        ""material_path_override"": null,
+        ""is_generic_asset"": false,
+        ""collider_info"": {
+            ""type"": ""none"",
+            ""is_trigger"": false,
+            ""center"": {
+                ""x"": 0,
+                ""y"": 0,
+                ""z"": 0
+            },
+            ""size"": {
+                ""x"": 1,
+                ""y"": 1,
+                ""z"": 1
+            },
+            ""radius"": 0.5,
+            ""height"": 2.0,
+            ""direction"": 1
+        },
+        ""rigidbody_info"": {
+            ""mass"": 0.0,
+            ""use_gravity"": true,
+            ""is_kinematic"": true,
+            ""drag"": 0.1,
+            ""angular_drag"": 0.05
+        }
+    },
+    {
+        ""asset_path"": ""Assets/Objects/Tolik_Cola/Recreation park/Bench/2/HighPoli/Bench_H_2.prefab"",
+        ""object_name_in_hierarchy"": ""park_bench_11"",
+        ""position"": {
+            ""x"": 8.0,
+            ""y"": 0.0,
+            ""z"": 15.0
+        },
+        ""rotation_euler"": {
+            ""x"": 0,
+            ""y"": 270.0,
+            ""z"": 0
+        },
+        ""scale"": {
+            ""x"": 1.0,
+            ""y"": 1.0,
+            ""z"": 1.0
+        },
+        ""material_path_override"": null,
+        ""is_generic_asset"": false,
+        ""collider_info"": {
+            ""type"": ""box"",
+            ""is_trigger"": false,
+            ""center"": {
+                ""x"": 0,
+                ""y"": 0,
+                ""z"": 0
+            },
+            ""size"": {
+                ""x"": 1,
+                ""y"": 1,
+                ""z"": 1
+            },
+            ""radius"": 0.5,
+            ""height"": 2.0,
+            ""direction"": 1
+        },
+        ""rigidbody_info"": {
+            ""mass"": 50.0,
+            ""use_gravity"": true,
+            ""is_kinematic"": true,
+            ""drag"": 0.1,
+            ""angular_drag"": 0.05
+        }
+    },
+    {
+        ""asset_path"": ""Assets/Objects/Sir_bike/Prefabs/Bicycle.prefab"",
+        ""object_name_in_hierarchy"": ""bicycle_12"",
+        ""position"": {
+            ""x"": 7.0,
+            ""y"": 0.0,
+            ""z"": 15.0
+        },
+        ""rotation_euler"": {
+            ""x"": 0,
+            ""y"": 270.0,
+            ""z"": 0
+        },
+        ""scale"": {
+            ""x"": 1.0,
+            ""y"": 1.0,
+            ""z"": 1.0
+        },
+        ""material_path_override"": null,
+        ""is_generic_asset"": false,
+        ""collider_info"": {
+            ""type"": ""mesh"",
+            ""is_trigger"": false,
+            ""center"": {
+                ""x"": 0,
+                ""y"": 0,
+                ""z"": 0
+            },
+            ""size"": {
+                ""x"": 1,
+                ""y"": 1,
+                ""z"": 1
+            },
+            ""radius"": 0.5,
+            ""height"": 2.0,
+            ""direction"": 1
+        },
+        ""rigidbody_info"": {
+            ""mass"": 15.0,
+            ""use_gravity"": true,
+            ""is_kinematic"": false,
+            ""drag"": 0.1,
+            ""angular_drag"": 0.05
+        }
+    },
+    {
+        ""asset_path"": ""Assets/Objects/Tree9/Tree9_2.prefab"",
+        ""object_name_in_hierarchy"": ""green_bush_13"",
+        ""position"": {
+            ""x"": 22.0,
+            ""y"": 0.0,
+            ""z"": 18.0
+        },
+        ""rotation_euler"": {
+            ""x"": 0,
+            ""y"": 0.0,
+            ""z"": 0
+        },
+        ""scale"": {
+            ""x"": 1.0,
+            ""y"": 1.0,
+            ""z"": 1.0
+        },
+        ""material_path_override"": null,
+        ""is_generic_asset"": false,
+        ""collider_info"": {
+            ""type"": ""mesh"",
+            ""is_trigger"": false,
+            ""center"": {
+                ""x"": 0,
+                ""y"": 0,
+                ""z"": 0
+            },
+            ""size"": {
+                ""x"": 1,
+                ""y"": 1,
+                ""z"": 1
+            },
+            ""radius"": 0.5,
+            ""height"": 2.0,
+            ""direction"": 1
+        },
+        ""rigidbody_info"": {
+            ""mass"": 0.0,
+            ""use_gravity"": true,
+            ""is_kinematic"": true,
+            ""drag"": 0.1,
+            ""angular_drag"": 0.05
+        }
+    }
+]";
+
+        // 5c. Parse the JSON using JsonUtility and a wrapper object.
+        // JsonUtility requires a root object for arrays, so we wrap the raw JSON.
+        string wrappedJsonInput = "{\"items\":" + jsonInput + "}";
+        SceneDataWrapper wrapper = JsonUtility.FromJson<SceneDataWrapper>(wrappedJsonInput);
+
+        if (wrapper == null || wrapper.items == null)
+        {
+            Debug.LogError("Failed to parse JSON data or JSON is empty.");
+            return;
+        }
+
+        // 5d. Loop through the list of objects.
+        foreach (SceneObjectData objectData in wrapper.items)
+        {
+            GameObject instance = null; // 5d.i. Declare GameObject instance
+
+            // 5d.ii. If asset_path is a primitive, create it
+            if (objectData.asset_path.StartsWith("primitive::"))
+            {
+                string primitiveTypeString = objectData.asset_path.Substring(11).ToLower();
+                PrimitiveType primitiveType;
+                switch (primitiveTypeString)
+                {
+                    case "box": primitiveType = PrimitiveType.Cube; break;
+                    case "sphere": primitiveType = PrimitiveType.Sphere; break;
+                    case "capsule": primitiveType = PrimitiveType.Capsule; break;
+                    case "cylinder": primitiveType = PrimitiveType.Cylinder; break;
+                    case "plane": primitiveType = PrimitiveType.Plane; break;
+                    case "quad": primitiveType = PrimitiveType.Quad; break;
+                    default:
+                        Debug.LogWarning($"Unknown primitive type '{primitiveTypeString}' for object '{objectData.object_name_in_hierarchy}'. Creating a Cube instead.");
+                        primitiveType = PrimitiveType.Cube;
+                        break;
+                }
+                instance = GameObject.CreatePrimitive(primitiveType);
+                // Immediately destroy its default collider as per instructions.
+                // This collider will be re-added/configured based on collider_info if not "none".
+                Collider defaultCollider = instance.GetComponent<Collider>();
+                if (defaultCollider != null)
+                {
+                    Object.DestroyImmediate(defaultCollider);
+                }
+            }
+            // 5d.iii. If it's a prefab path, load and instantiate it
+            else
+            {
+                GameObject loadedPrefab = AssetDatabase.LoadAssetAtPath<GameObject>(objectData.asset_path);
+                if (loadedPrefab == null)
+                {
+                    Debug.LogWarning($"Failed to load prefab from path: '{objectData.asset_path}' for object '{objectData.object_name_in_hierarchy}'. Skipping this object.");
+                    continue; // Skip to the next object in the loop
+                }
+                instance = (GameObject)PrefabUtility.InstantiatePrefab(loadedPrefab);
+            }
+
+            // 5e. After the if/else block, if instance is not null:
+            if (instance != null)
+            {
+                // 5e.i. Set its parent
+                instance.transform.SetParent(sceneRoot.transform);
+
+                // 5e.ii. Configure its name, transform, and material (if generic)
+                instance.name = objectData.object_name_in_hierarchy;
+                instance.transform.position = objectData.position; // Implicit conversion from Vector3Data
+                instance.transform.rotation = Quaternion.Euler(objectData.rotation_euler); // Implicit conversion
+                instance.transform.localScale = objectData.scale; // Implicit conversion
+
+                if (objectData.is_generic_asset && !string.IsNullOrEmpty(objectData.material_path_override))
+                {
+                    Material material = AssetDatabase.LoadAssetAtPath<Material>(objectData.material_path_override);
+                    if (material != null)
+                    {
+                        Renderer renderer = instance.GetComponent<Renderer>();
+                        if (renderer == null)
+                        {
+                            // For generic assets (like primitives), ensure there's a renderer
+                            renderer = instance.AddComponent<MeshRenderer>();
+                        }
+                        if (renderer != null)
+                        {
+                            renderer.material = material;
+                        }
+                    }
+                    else
+                    {
+                        Debug.LogWarning($"Failed to load material from path: '{objectData.material_path_override}' for object '{objectData.object_name_in_hierarchy}'.");
+                    }
+                }
+
+                // 5e.iii. Add and configure colliders
+                // Remove all existing colliders on the instance first to ensure a clean slate
+                Collider[] existingColliders = instance.GetComponents<Collider>();
+                foreach (Collider existingCol in existingColliders)
+                {
+                    Object.DestroyImmediate(existingCol);
+                }
+
+                if (objectData.collider_info != null && objectData.collider_info.type.ToLower() != "none")
+                {
+                    Collider newCollider = null;
+                    switch (objectData.collider_info.type.ToLower())
+                    {
+                        case "box":
+                            BoxCollider boxCol = instance.AddComponent<BoxCollider>();
+                            boxCol.center = objectData.collider_info.center;
+                            boxCol.size = objectData.collider_info.size;
+                            newCollider = boxCol;
+                            break;
+                        case "sphere":
+                            SphereCollider sphereCol = instance.AddComponent<SphereCollider>();
+                            sphereCol.center = objectData.collider_info.center;
+                            sphereCol.radius = objectData.collider_info.radius;
+                            newCollider = sphereCol;
+                            break;
+                        case "capsule":
+                            CapsuleCollider capCol = instance.AddComponent<CapsuleCollider>();
+                            capCol.center = objectData.collider_info.center;
+                            capCol.radius = objectData.collider_info.radius;
+                            capCol.height = objectData.collider_info.height;
+                            capCol.direction = objectData.collider_info.direction; // 0=X, 1=Y, 2=Z
+                            newCollider = capCol;
+                            break;
+                        case "mesh":
+                            MeshCollider meshCol = instance.AddComponent<MeshCollider>();
+                            // MeshCollider does not use center, size, radius, height, direction directly.
+                            // Its shape is derived from the MeshFilter component on the GameObject.
+                            newCollider = meshCol;
+                            break;
+                        default:
+                            Debug.LogWarning($"Unsupported collider type '{objectData.collider_info.type}' for object '{objectData.object_name_in_hierarchy}'. No collider added.");
+                            break;
+                    }
+
+                    if (newCollider != null)
+                    {
+                        newCollider.isTrigger = objectData.collider_info.is_trigger;
+                    }
+                }
+
+                // Add and configure rigidbodies
+                // Remove all existing rigidbodies on the instance first
+                Rigidbody[] existingRigidbodies = instance.GetComponents<Rigidbody>();
+                foreach (Rigidbody existingRb in existingRigidbodies)
+                {
+                    Object.DestroyImmediate(existingRb);
+                }
+
+                if (objectData.rigidbody_info != null)
+                {
+                    Rigidbody rb = instance.AddComponent<Rigidbody>();
+                    rb.mass = objectData.rigidbody_info.mass;
+                    rb.useGravity = objectData.rigidbody_info.use_gravity;
+                    rb.isKinematic = objectData.rigidbody_info.is_kinematic;
+                    rb.drag = objectData.rigidbody_info.drag;
+                    rb.angularDrag = objectData.rigidbody_info.angular_drag;
+                }
+            }
+        }
+        Debug.Log("Scene construction complete!");
+    }
+}

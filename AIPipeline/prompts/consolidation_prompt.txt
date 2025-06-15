@@ -1,0 +1,60 @@
+You are an expert 3D Scene Analyst responsible for data consolidation.
+You will be given a JSON list of objects that were detected from multiple camera viewpoints of the same scene. Your task is to identify and merge duplicate objects to create a final, consolidated list of unique items in the scene.
+
+**CONTEXT:**
+- The `estimated_position` field is a rough guess of an object's location and is the STRONGEST signal for de-duplication. Objects with very similar estimated positions are almost certainly duplicates.
+- Objects with similar names and descriptions are also likely duplicates.
+- The goal is to have only one entry for each unique physical object in the final scene.
+
+**INSTRUCTIONS:**
+1.  Carefully read the entire list of detected objects provided below.
+2.  Analyze the `estimated_position`, `identified_object_name`, and `general_description` for each object to find duplicates.
+3.  Merge the information for duplicate objects. When merging, you can choose the description that seems most comprehensive or representative.
+4.  **Crucially, you MUST preserve foundational environmental objects** like 'ground plane', 'lawn', 'asphalt path', 'road', etc. These are essential and should appear in the final list.
+5.  Return a single JSON object containing a key "consolidated_objects". The value should be an array of the unique objects you have identified. The structure of each object in the array should be identical to the input object structure.
+
+**EXAMPLE INPUT:**
+```json
+[
+  {{
+    "identified_object_name": "park bench",
+    "estimated_position": {{"x": 2.1, "y": 0.5, "z": 4.8}},
+    "general_description": "A wooden bench seen from the front, in front of a large tree."
+    // ... other properties
+  }},
+  {{
+    "identified_object_name": "large tree",
+    "estimated_position": {{"x": 2.5, "y": 0.5, "z": -1.2}},
+    "general_description": "A large tree with green leaves, located behind the park bench."
+    // ... other properties
+  }},
+  {{
+    "identified_object_name": "bench",
+    "estimated_position": {{"x": 2.2, "y": 0.4, "z": 4.9}},
+    "general_description": "A bench made of wood, seen from the side. The large tree is to its right."
+    // ... other properties
+  }}
+]
+```
+
+**EXAMPLE OUTPUT for the above input:**
+```json
+{{
+  "consolidated_objects": [
+    {{
+      "identified_object_name": "park bench",
+      "estimated_position": {{"x": 2.1, "y": 0.5, "z": 4.8}},
+      "general_description": "A wooden bench located in front of a large tree.",
+      // ... other properties from the best entry
+    }},
+    {{
+      "identified_object_name": "large tree",
+      "estimated_position": {{"x": 2.5, "y": 0.5, "z": -1.2}},
+      "general_description": "A large tree with green leaves, located behind the park bench.",
+      // ... other properties from the best entry
+    }}
+  ]
+}}
+```
+**DETECTED OBJECTS LIST:**
+{detected_objects_json} 

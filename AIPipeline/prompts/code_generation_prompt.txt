@@ -1,0 +1,102 @@
+You are an expert Unity C# scriptwriter. Your task is to generate the complete C# code for a single file named `LLMGeneratedSceneBuilder.cs`.
+
+**Follow these instructions precisely to construct the file:**
+
+1.  **Start with `using` statements:** Include `UnityEngine`, `UnityEditor`, `System.Collections.Generic`, and `System.IO`. You **must** also include `using Object = UnityEngine.Object;` to prevent ambiguity errors.
+2.  **Define Helper Classes:** Define all necessary `[System.Serializable]` helper classes for JSON deserialization (`SceneObjectData`, `Vector3Data`, `ColliderInfoData`, `RigidbodyInfoData`, and a `SceneDataWrapper` for the list) **outside** the main `LLMGeneratedSceneBuilder` class.
+3.  **Define the Main Class:** Define a `public static class` named `LLMGeneratedSceneBuilder`.
+4.  **Define the Main Method:** Inside this class, define a `public static void` method named `ConstructScene()`. Add the `[MenuItem("AI Tools/Construct Scene from LLM-Generated Code")]` attribute above it.
+5.  **Inside the `ConstructScene()` method:**
+    a.  Find or create a root `GameObject` named "LLM_Generated_Scene_Root".
+    b.  Define a multiline string variable `jsonInput` containing the provided JSON data.
+    c.  Parse the JSON using `JsonUtility` and a wrapper object.
+    d.  Loop through the list of objects. For each object:
+        i.   Declare a `GameObject instance = null;`
+        ii.  If the `asset_path` is a primitive, create it using `GameObject.CreatePrimitive()` and assign it to `instance`. Immediately destroy its default collider.
+        iii. If it's a prefab path, load it with `AssetDatabase.LoadAssetAtPath<GameObject>()`. If successful, instantiate it using `(GameObject)PrefabUtility.InstantiatePrefab(loadedPrefab)` and assign it to `instance`.
+    e.  After the `if/else` block, if `instance` is not null:
+        i.   Set its parent using `instance.transform.SetParent(sceneRoot.transform);`.
+        ii.  Configure its name, transform, and material (if generic).
+        iii. Add and configure colliders and rigidbodies. You **MUST** add these components directly to the instance (e.g., `instance.AddComponent<BoxCollider>()`). Do **NOT** use the `Undo` class.
+    f.  You **must not** use any classes related to scene management, such as `EditorSceneManager` or `SceneManager`. All operations should be performed on the `GameObject` instances directly.
+
+**JSON Data to Process:**
+Embed this JSON data directly into the `jsonInput` string literal in your generated C# code:
+```json
+[PASTE_JSON_OBJECT_LIST_HERE]
+```**Your final output must be a single, complete, valid C# script file. Do not provide any other commentary.**
+
+```csharp
+using UnityEngine;
+using UnityEditor;
+using System.Collections.Generic;
+using System.IO;
+
+public static class LLMGeneratedSceneBuilder
+{
+    [MenuItem("AI Tools/Construct Scene from LLM-Generated Code")]
+    public static void ConstructScene()
+    {
+        GameObject sceneRoot = GameObject.Find("LLM_Generated_Scene_Root");
+        if (sceneRoot == null)
+        {
+            sceneRoot = new GameObject("LLM_Generated_Scene_Root");
+        }
+
+        string jsonInput = @"[PASTE_JSON_OBJECT_LIST_HERE]";
+
+        SceneDataWrapper wrapper = JsonUtility.FromJson<SceneDataWrapper>(jsonInput);
+
+        foreach (SceneObjectData objectData in wrapper.items)
+        {
+            GameObject instance = null;
+
+            if (objectData.asset_path.StartsWith("primitive::"))
+            {
+                string primitiveType = objectData.asset_path.Substring(11);
+                instance = GameObject.CreatePrimitive(PrimitiveType.Cube);
+                instance.name = objectData.name;
+                instance.transform.position = objectData.transform.position;
+                instance.transform.rotation = Quaternion.Euler(objectData.transform.rotation);
+                instance.transform.localScale = objectData.transform.localScale;
+                Object.DestroyImmediate(instance.GetComponent<Collider>());
+            }
+            else
+            {
+                instance = AssetDatabase.LoadAssetAtPath<GameObject>(objectData.asset_path);
+                if (instance == null)
+                {
+                    Debug.LogWarning("Failed to load prefab from path: " + objectData.asset_path);
+                    continue;
+                }
+                instance = (GameObject)UnityEditor.PrefabUtility.InstantiatePrefab(instance);
+                instance.name = objectData.name;
+                instance.transform.position = objectData.transform.position;
+                instance.transform.rotation = Quaternion.Euler(objectData.transform.rotation);
+                instance.transform.localScale = objectData.transform.localScale;
+            }
+
+            if (instance != null)
+            {
+                instance.transform.parent = sceneRoot.transform;
+
+                if (objectData.material_path_override != null && objectData.is_generic_asset)
+                {
+                    Material material = AssetDatabase.LoadAssetAtPath<Material>(objectData.material_path_override);
+                    if (material != null)
+                    {
+                        Renderer renderer = instance.GetComponent<Renderer>();
+                        if (renderer != null)
+                        {
+                            renderer.material = material;
+                        }
+                    }
+                }
+
+                instance.AddComponent<Collider>();
+                instance.AddComponent<Rigidbody>();
+            }
+        }
+    }
+}
+
